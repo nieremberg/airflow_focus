@@ -1,0 +1,72 @@
+{
+  "_comment": "========================================================================",
+  "_comment2": "Variáveis do Airflow para os pipelines FOCUS",
+  "_comment3": "Copie este arquivo para airflow_variables.json e configure com seus valores",
+  "_comment4": "========================================================================",
+
+  "_section_aws": "========== AWS (Amazon Web Services) ==========",
+  "AWS_ACCESS_KEY_ID": "AKIAIOSFODNN7EXAMPLE",
+  "AWS_SECRET_ACCESS_KEY": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+  "AWS_REGION": "us-east-1",
+  "AWS_BUCKET": "seu-bucket-aws-focus",
+  "AWS_PREFIX": "reports/focus/",
+
+  "_section_oci": "========== OCI (Oracle Cloud Infrastructure) ==========",
+  "_oci_note": "OCI usa arquivo de configuração ~/.oci/config ao invés de variáveis",
+  "_oci_note2": "As variáveis abaixo são apenas para referência do bucket",
+  "OCI_BUCKET": "seu-bucket-oci-focus",
+  "OCI_PREFIX": "reports/focus/",
+
+  "_section_gcp": "========== GCP (Google Cloud Platform) ==========",
+  "_gcp_note": "GCP usa service account JSON. Configure GOOGLE_APPLICATION_CREDENTIALS",
+  "GCP_BUCKET": "seu-bucket-gcp-focus",
+  "GCP_PREFIX": "reports/focus/",
+  "GCP_PROJECT_ID": "seu-projeto-gcp",
+
+  "_section_huawei": "========== Huawei Cloud ==========",
+  "HUAWEI_ACCESS_KEY_ID": "sua-huawei-access-key",
+  "HUAWEI_SECRET_ACCESS_KEY": "sua-huawei-secret-key",
+  "HUAWEI_REGION": "sa-brazil-1",
+  "HPC_BUCKET": "seu-bucket-huawei-focus",
+  "HPC_FOCUS_PREFIX": "reports/focus/",
+
+  "_section_backup": "========== Backup/Audit Storage (S3-Compatible) ==========",
+  "_backup_note": "Object Storage on-premises ou na nuvem para backup e auditoria",
+  "_backup_note2": "Pode ser: Dell ECS, MinIO, AWS S3, Wasabi, Backblaze B2, etc",
+  "_backup_note3": "Todos os storages S3-compatible são suportados",
+
+  "BACKUP_STORAGE_TYPE": "ecs",
+  "_backup_type_options": "Opções: ecs, minio, s3, wasabi, backblaze, generic-s3",
+
+  "BACKUP_ACCESS_KEY_ID": "sua-backup-access-key",
+  "BACKUP_SECRET_ACCESS_KEY": "sua-backup-secret-key",
+  "BACKUP_ENDPOINT_URL": "https://seu-storage.exemplo.com",
+  "_backup_endpoint_note": "Para Dell ECS, MinIO, ou outro S3-compatible",
+
+  "BACKUP_BUCKET": "focus-reports-backup",
+  "BACKUP_AWS_PREFIX": "raw/aws/",
+  "BACKUP_OCI_PREFIX": "raw/oci/",
+  "BACKUP_GCP_PREFIX": "raw/gcp/",
+  "BACKUP_HUAWEI_PREFIX": "raw/huawei/",
+
+  "_backup_region": "Opcional - alguns provedores S3-compatible exigem",
+  "BACKUP_REGION": "us-east-1",
+
+  "_section_database": "========== PostgreSQL Database ==========",
+  "_db_note": "Configurações de conexão com o banco de dados PostgreSQL",
+
+  "FINOPS_DB_HOST": "localhost",
+  "FINOPS_DB_PORT": "5432",
+  "FINOPS_DB": "finops",
+  "FINOPS_USER": "airflow_user",
+  "FINOPS_PASSWORD": "sua-senha-segura",
+
+  "_section_tables": "========== Database Tables (FOCUS) ==========",
+  "_tables_note": "Nomes das tabelas onde os dados FOCUS serão armazenados",
+
+  "TABLE_AWS_FOCUS": "tb_aws_focus",
+  "TABLE_OCI_FOCUS": "tb_oci_focus",
+  "TABLE_GCP_FOCUS": "tb_gcp_focus",
+  "TABLE_HUAWEI_FOCUS": "tb_hpc_focus",
+  "TABLE_PROCESSED_FILES": "tb_processed_files"
+}
