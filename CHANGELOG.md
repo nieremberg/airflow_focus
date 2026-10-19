@@ -82,4 +82,4 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Backup storage garante que dados de billing ficam sob controle corporativo
 - Nenhuma senha ou credencial hard-coded no código
 
-[1.0.0]: https://github.com/seu-usuario/airflow_focus/releases/tag/v1.0.0
+[1.0.0]: https://github.com/nieremberg/airflow_focus/releases/tag/v1.0.0
