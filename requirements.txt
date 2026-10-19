@@ -1,0 +1,51 @@
+# =============================================================================
+# requirements.txt - Airflow FOCUS Pipeline
+# =============================================================================
+# Dependências necessárias para executar as DAGs FOCUS no Apache Airflow
+# Este projeto coleta reports no padrão FOCUS dos provedores:
+# - AWS (Amazon Web Services)
+# - OCI (Oracle Cloud Infrastructure)
+# - GCP (Google Cloud Platform)
+# - Huawei Cloud
+# =============================================================================
+
+# --- Apache Airflow ---
+apache-airflow>=2.7.0
+
+# --- Processamento de dados ---
+pandas==3.0.5
+numpy==2.5.2
+SQLAlchemy==2.0.52
+psycopg2-binary==2.9.12
+pytz==2026.3.post1
+python-dateutil==2.9.0.post0
+
+# --- Cloud Provider SDKs ---
+# AWS
+boto3>=1.28.0
+botocore>=1.31.0
+
+# Oracle Cloud Infrastructure (OCI)
+oci>=2.112.0
+
+# Google Cloud Platform (GCP)
+google-cloud-storage>=2.10.0
+google-cloud-bigquery>=3.11.0
+
+# Huawei Cloud (OBS)
+esdk-obs-python>=3.23.0
+
+# --- Utilitários ---
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# =============================================================================
+# Dependências opcionais para desenvolvimento e testes
+# -----------------------------------------------------------------------------
+# Descomente as linhas abaixo se você estiver desenvolvendo ou testando:
+#
+# pytest==9.1.1
+# hypothesis==6.167.1
+# pylint>=3.0.0
+# black>=23.0.0
+# =============================================================================
