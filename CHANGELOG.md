@@ -23,8 +23,7 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Badges de tecnologias no README
 - Arquivo de exemplo de variáveis do Airflow com comentários
 - Suporte a múltiplos formatos de compressão (.gz, .zip)
-- Retry automático com backoff exponencial
-- Paralelização de tasks quando possível
+- Retry automático com delay fixo configurável (padrão: 5 tentativas, 2 minutos de intervalo)
 
 ### Estrutura
 - `dags/`: DAGs do Airflow para cada provedor
@@ -51,13 +50,12 @@ e este projeto adere ao [Semantic Versioning](https://semver.org/lang/pt-BR/).
 - Variáveis configuráveis: BACKUP_STORAGE_TYPE, BACKUP_ENDPOINT_URL, credenciais
 
 ### Variáveis do Airflow
-- Credenciais dos provedores (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, etc)
+- Credenciais dos provedores (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, GCP_ACCESS_KEY, HPC_ACCESS_KEY, etc)
 - Configurações de bucket e prefix para cada provedor
-- Configurações do backup storage (tipo, endpoint, credenciais, prefixes)
-- Configurações do banco de dados (host, porta, database, usuário, senha)
-- Nomes das tabelas FOCUS (TABLE_AWS_FOCUS, TABLE_OCI_FOCUS, etc)
+- Configurações do backup storage Dell ECS/S3-compatible (endpoint, credenciais, prefixes via variáveis ECS_*)
+- Configurações de conexão com o banco de dados (host, database, usuário, senha)
 - Suporte a import/export via JSON (airflow_variables.example.json)
-- Nenhuma configuração hard-coded no código
+- Porta do PostgreSQL e nomes das tabelas FOCUS são fixos no código, não configuráveis via variável
 
 ### Escopo e Documentação
 - Documento SCOPE.md detalhando o que está e o que NÃO está incluído

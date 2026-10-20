@@ -40,11 +40,10 @@ Tudo é configurável através de variáveis do Airflow:
 
 - **Credenciais** dos provedores de nuvem
 - **Configurações** de buckets e prefixes
-- **Parâmetros** do banco de dados PostgreSQL
-- **Nomes** das tabelas FOCUS
+- **Parâmetros** de conexão do banco de dados PostgreSQL (host, usuário, senha, database)
 - **Endpoints** de backup storage
 
-**Nenhum valor está hard-coded** no código.
+**Credenciais, buckets, prefixes e conexão com o banco não estão hard-coded** no código. A porta do PostgreSQL e os nomes das tabelas FOCUS são fixos no código (não configuráveis via variável).
 
 ### 3. Documentação Completa
 

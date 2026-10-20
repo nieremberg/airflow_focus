@@ -140,12 +140,12 @@ Contratos e interfaces:
         │ unpack_files │
         ▼              │
 ┌──────────────────┐   │
-│  PostgreSQL DB   │   │ upload_to_backup_storage
+│  PostgreSQL DB   │   │ upload_to_dell_ecs
 │  (FOCUS tables)  │   │ (arquivos raw)
-│  - focus_aws     │   │
-│  - focus_oci     │   ▼
-│  - focus_gcp     │  ┌───────────────────────────┐
-│  - focus_hpc     │  │  Backup Storage           │
+│  - tb_aws_focus  │   │
+│  - tb_oci_focus  │   ▼
+│  - tb_gcp_focus  │  ┌───────────────────────────┐
+│  - tb_hpc_focus  │  │  Backup Storage (Dell ECS)│
 └──────────────────┘  │  (S3-Compatible)          │
                       │                           │
                       │  Opções:                  │

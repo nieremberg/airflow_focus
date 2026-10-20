@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import create_engine, text
 from sqlalchemy.pool import NullPool
 from airflow.sdk import Variable
-from typing import Union, Dict, List
+from typing import Union, Dict, List, Any
 
 
 def get_engine():
@@ -44,8 +44,8 @@ def get_processed_files(provider: str) -> set:
     table = "tb_processed_files"
 
     try:
-        query = f"SELECT key FROM {table} WHERE provider = '{provider}'"
-        df = pd.read_sql(query, con=engine)
+        query = text(f"SELECT key FROM {table} WHERE provider = :provider")
+        df = pd.read_sql(query, con=engine, params={"provider": provider})
 
         return df["key"].tolist()
 
@@ -149,7 +149,7 @@ def upsert_table(
 def clean_data(
     engine,
     table_name: str,
-    where_conditions: Union[Dict[str, any], List[Dict[str, any]]]
+    where_conditions: Union[Dict[str, Any], List[Dict[str, Any]]]
 ):
     """
     Exclui registros de uma tabela com base em condições dinâmicas.

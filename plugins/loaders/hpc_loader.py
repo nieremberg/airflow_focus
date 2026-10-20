@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 from sqlalchemy.types import JSON
-from typing import Self
 from loaders.base_loader import BaseLoader
 from utils.files import hpc_sort_files
 from utils.database import get_engine, clean_data
@@ -16,6 +15,15 @@ class HPCLoader(BaseLoader):
     def __init__(self, provider, temp_dir):
         super().__init__(provider, temp_dir)
         self.engine = get_engine()
+
+    def _build_processed_key(self, file: str, file_extension: str) -> str:
+        """
+        Chave de dedup baseada no diretório do snapshot, não no arquivo
+        individual: um .zip da Huawei pode descompactar em múltiplos CSVs,
+        e a chave precisa corresponder ao nome do .zip original no bucket
+        (usado tanto por is_file_processed quanto por register_processed_file).
+        """
+        return os.path.relpath(os.path.dirname(file), self.temp_dir) + file_extension
 
     def read_files(self):
         csv_files = []
@@ -153,50 +161,20 @@ class HPCLoader(BaseLoader):
         finally:
             self.engine.dispose()
 
-    def register_processed_file(
-        self: Self, file: str, file_extension: str
-    ) -> None:
-        """
-        Registra o arquivo processado na tabela tb_processed_files
-
-        Args:
-            file (str): arquivo processado
-            file_extension (str): extensão do arquivos para concatenar
-
-        Raises:
-            e: Erros gerais durante o insert em banco
-        """
-        key = os.path.relpath(os.path.dirname(file), self.temp_dir) + file_extension
-        df = pd.DataFrame(
-            {
-                "provider": [self.provider],
-                "date": [pd.Timestamp.now(tz="UTC")],
-                "key": [key],
-            }
-        )
-
-        engine = get_engine()
-        table = "tb_processed_files"
-        try:
-            with engine.begin() as connection:
-                df.to_sql(
-                    table,
-                    con=connection,
-                    if_exists="append",
-                    index=False,
-                )
-            print(f"Arquivo registrado como processado. key={key}")
-        except Exception as e:
-            print(f"Erro ao registrar o arquivo na tabela {table}: {e}")
-            raise e
-        finally:
-            engine.dispose()
-
 
 class HPCFocusLoader(BaseLoader):
     def __init__(self, provider, temp_dir):
         super().__init__(provider, temp_dir)
         self.engine = get_engine()
+
+    def _build_processed_key(self, file: str, file_extension: str) -> str:
+        """
+        Chave de dedup baseada no diretório do snapshot, não no arquivo
+        individual: um .zip da Huawei pode descompactar em múltiplos CSVs,
+        e a chave precisa corresponder ao nome do .zip original no bucket
+        (usado tanto por is_file_processed quanto por register_processed_file).
+        """
+        return os.path.relpath(os.path.dirname(file), self.temp_dir) + file_extension
 
     def read_files(self):
         csv_files = []
@@ -269,42 +247,3 @@ class HPCFocusLoader(BaseLoader):
             raise e
         finally:
             self.engine.dispose()
-
-    def register_processed_file(
-        self: Self, file: str, file_extension: str
-    ) -> None:
-        """
-        Registra o arquivo processado na tabela tb_processed_files
-
-        Args:
-            file (str): arquivo processado
-            file_extension (str): extensão do arquivos para concatenar
-
-        Raises:
-            e: Erros gerais durante o insert em banco
-        """
-        key = os.path.relpath(os.path.dirname(file), self.temp_dir) + file_extension
-        df = pd.DataFrame(
-            {
-                "provider": [self.provider],
-                "date": [pd.Timestamp.now(tz="UTC")],
-                "key": [key],
-            }
-        )
-
-        engine = get_engine()
-        table = "tb_processed_files"
-        try:
-            with engine.begin() as connection:
-                df.to_sql(
-                    table,
-                    con=connection,
-                    if_exists="append",
-                    index=False,
-                )
-            print(f"Arquivo registrado como processado. key={key}")
-        except Exception as e:
-            print(f"Erro ao registrar o arquivo na tabela {table}: {e}")
-            raise e
-        finally:
-            engine.dispose()

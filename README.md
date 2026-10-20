@@ -237,7 +237,7 @@ Cada DAG FOCUS segue um fluxo ETL padronizado:
 2. **download_new_objects**: Baixa novos objetos do bucket do provedor na nuvem
 3. **unpack_files**: Descompacta arquivos (.gz para AWS/OCI, .zip para Huawei, não necessário para GCP)
 4. **load_to_db**: Carrega dados no PostgreSQL seguindo o esquema FOCUS
-5. **upload_to_backup_storage**: Sincroniza os arquivos raw para o backup storage (S3-compatible)
+5. **upload_to_dell_ecs**: Sincroniza os arquivos raw para o backup storage (S3-compatible)
 6. **clean_temp_dir**: Limpa o diretório temporário local
 
 ## Configuração
@@ -277,45 +277,45 @@ nano airflow_variables.json
 airflow variables import airflow_variables.json
 ```
 
-**Alternativa:** Configure via CLI (exemplo AWS):
+**Alternativa:** Configure via CLI (nomes exatamente como lidos pelo código via `Variable.get()`):
 
 ```bash
 # AWS - Credenciais e Bucket
 airflow variables set AWS_ACCESS_KEY_ID "sua-access-key"
 airflow variables set AWS_SECRET_ACCESS_KEY "sua-secret-key"
-airflow variables set AWS_REGION "us-east-1"
 airflow variables set AWS_BUCKET "seu-bucket-aws"
 airflow variables set AWS_PREFIX "reports/focus/"
 
-# OCI - Bucket (credenciais via ~/.oci/config)
+# OCI - Namespace e Bucket (credenciais via arquivo ./config/oci.conf)
+airflow variables set OCI_NAMESPACE "seu-namespace-oci"
 airflow variables set OCI_BUCKET "seu-bucket-oci"
 airflow variables set OCI_PREFIX "reports/focus/"
 
-# GCP - Bucket (credenciais via service account JSON)
+# GCP - Bucket (credenciais via chaves HMAC da API S3-compatible do Cloud Storage)
+airflow variables set GCP_ACCESS_KEY "sua-gcp-hmac-access-key"
+airflow variables set GCP_SECRET_KEY "sua-gcp-hmac-secret-key"
 airflow variables set GCP_BUCKET "seu-bucket-gcp"
 airflow variables set GCP_PREFIX "reports/focus/"
-airflow variables set GCP_PROJECT_ID "seu-projeto-gcp"
 
-# Huawei - Credenciais e Bucket
-airflow variables set HUAWEI_ACCESS_KEY_ID "sua-access-key"
-airflow variables set HUAWEI_SECRET_ACCESS_KEY "sua-secret-key"
-airflow variables set HUAWEI_REGION "sa-brazil-1"
+# Huawei Cloud (OBS) - Credenciais e Bucket
+airflow variables set HPC_ACCESS_KEY "sua-huawei-access-key"
+airflow variables set HPC_SECRET_KEY "sua-huawei-secret-key"
+airflow variables set HPC_SERVER "https://obs.sa-brazil-1.myhuaweicloud.com"
 airflow variables set HPC_BUCKET "seu-bucket-huawei"
 airflow variables set HPC_FOCUS_PREFIX "reports/focus/"
 
 # Backup Storage (S3-Compatible) - Dell ECS, MinIO, etc
-airflow variables set BACKUP_STORAGE_TYPE "ecs"
-airflow variables set BACKUP_ACCESS_KEY_ID "sua-backup-access-key"
-airflow variables set BACKUP_SECRET_ACCESS_KEY "sua-backup-secret-key"
-airflow variables set BACKUP_ENDPOINT_URL "https://seu-storage.exemplo.com"
-airflow variables set BACKUP_BUCKET "focus-reports-backup"
-airflow variables set BACKUP_AWS_PREFIX "raw/aws/"
-airflow variables set BACKUP_OCI_PREFIX "raw/oci/"
-airflow variables set BACKUP_GCP_PREFIX "raw/gcp/"
-airflow variables set BACKUP_HUAWEI_PREFIX "raw/huawei/"
+airflow variables set ECS_ACCESS_KEY "sua-ecs-access-key"
+airflow variables set ECS_SECRET_KEY "sua-ecs-secret-key"
+airflow variables set ECS_ENDPOINT_URL "https://seu-storage.exemplo.com"
+airflow variables set ECS_BUCKET "focus-reports-backup"
+airflow variables set ECS_AWS_PREFIX "raw/aws/"
+airflow variables set ECS_OCI_PREFIX "raw/oci/"
+airflow variables set ECS_GCP_PREFIX "raw/gcp/"
+airflow variables set ECS_HPC_FOCUS_PREFIX "raw/huawei/"
 ```
 
-> **Nota sobre Backup Storage**: Pode ser Dell ECS, MinIO, AWS S3, Wasabi, ou qualquer object storage compatível com S3. Configure o `BACKUP_ENDPOINT_URL` apenas para storages on-premises ou alternativos (não necessário para AWS S3).
+> **Nota sobre Backup Storage**: Pode ser Dell ECS, MinIO, AWS S3, Wasabi, ou qualquer object storage compatível com S3. `ECS_ENDPOINT_URL` é sempre obrigatório, pois é lido diretamente pelo código (use o endpoint do seu storage; para AWS S3 use `https://s3.amazonaws.com` ou a URL regional equivalente).
 
 4. Configure as credenciais dos provedores:
 
@@ -326,7 +326,7 @@ export AWS_SECRET_ACCESS_KEY="sua-secret-key"
 export AWS_DEFAULT_REGION="us-east-1"
 ```
 
-**OCI**: Configure o arquivo `~/.oci/config`
+**OCI**: Crie o arquivo `./config/oci.conf` (caminho relativo ao diretório de trabalho do worker do Airflow — veja `plugins/storages/oci_storage.py`)
 ```ini
 [DEFAULT]
 user=ocid1.user.oc1...
@@ -335,47 +335,34 @@ tenancy=ocid1.tenancy.oc1...
 region=us-ashburn-1
 key_file=~/.oci/oci_api_key.pem
 ```
+> O namespace do bucket é lido da variável do Airflow `OCI_NAMESPACE`, não do arquivo de config.
 
-**GCP**: Configure através de service account
-```bash
-export GOOGLE_APPLICATION_CREDENTIALS="/path/to/service-account-key.json"
-```
+**GCP**: O storage GCP usa a API S3-compatible do Cloud Storage com chaves HMAC, configuradas via variáveis do Airflow `GCP_ACCESS_KEY` e `GCP_SECRET_KEY` (veja seção de Variáveis acima). Não é necessário `GOOGLE_APPLICATION_CREDENTIALS`.
 
-**Huawei**: Configure através de variáveis de ambiente
-```bash
-export HUAWEI_ACCESS_KEY_ID="sua-access-key"
-export HUAWEI_SECRET_ACCESS_KEY="sua-secret-key"
-export HUAWEI_REGION="sa-brazil-1"
-```
+**Huawei**: Configure através das variáveis do Airflow `HPC_ACCESS_KEY`, `HPC_SECRET_KEY` e `HPC_SERVER` (veja seção de Variáveis acima).
 
 5. Configure as variáveis do banco de dados:
 
 ```bash
 # PostgreSQL - Configuração de Conexão
 airflow variables set FINOPS_DB_HOST "localhost"
-airflow variables set FINOPS_DB_PORT "5432"
 airflow variables set FINOPS_DB "finops"
 airflow variables set FINOPS_USER "airflow_user"
 airflow variables set FINOPS_PASSWORD "sua-senha-segura"
-
-# PostgreSQL - Nomes das Tabelas FOCUS
-airflow variables set TABLE_AWS_FOCUS "tb_aws_focus"
-airflow variables set TABLE_OCI_FOCUS "tb_oci_focus"
-airflow variables set TABLE_GCP_FOCUS "tb_gcp_focus"
-airflow variables set TABLE_HUAWEI_FOCUS "tb_hpc_focus"
-airflow variables set TABLE_PROCESSED_FILES "tb_processed_files"
 ```
 
-> **Importante**: Nenhuma configuração está hard-coded. Todos os parâmetros (conexão, tabelas, buckets, credenciais) são configuráveis via variáveis do Airflow.
+> **Importante**: A conexão (host, usuário, senha, database) é configurável via variáveis do Airflow. A porta (`5432`) e os nomes das tabelas FOCUS (`tb_aws_focus`, `tb_oci_focus`, `tb_gcp_focus`, `tb_hpc_focus`, `tb_processed_files`) são fixos no código (`plugins/utils/database.py` e `plugins/loaders/`), não configuráveis via variável.
 
 ### Estrutura do Banco de Dados
 
 Cada provedor armazena seus dados em uma tabela específica seguindo o esquema FOCUS:
 
-- **AWS**: `focus_aws`
-- **OCI**: `focus_oci`
-- **GCP**: `focus_gcp`
-- **Huawei**: `focus_hpc`
+- **AWS**: `tb_aws_focus`
+- **OCI**: `tb_oci_focus`
+- **GCP**: `tb_gcp_focus`
+- **Huawei**: `tb_hpc_focus`
+
+Os arquivos já processados são rastreados na tabela `tb_processed_files`.
 
 ## Uso
 

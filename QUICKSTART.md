@@ -125,12 +125,14 @@ EOF
 
 ### OCI (Oracle Cloud)
 
+O client OCI (`plugins/storages/oci_storage.py`) carrega as credenciais de um arquivo de config em um caminho relativo (`./config/oci.conf`, relativo ao diretório de trabalho do processo do Airflow worker) — não de `~/.oci/config`.
+
 ```bash
-# Crie o diretório de configuração
-mkdir -p ~/.oci
+# Crie o diretório de configuração relativo ao AIRFLOW_HOME (ou cwd do worker)
+mkdir -p ./config
 
 # Crie o arquivo de configuração
-cat > ~/.oci/config << EOF
+cat > ./config/oci.conf << EOF
 [DEFAULT]
 user=ocid1.user.oc1..<seu-user-ocid>
 fingerprint=<seu-fingerprint>
@@ -144,27 +146,15 @@ cp /caminho/para/sua/chave.pem ~/.oci/oci_api_key.pem
 chmod 600 ~/.oci/oci_api_key.pem
 ```
 
+> O namespace do bucket OCI é configurado separadamente via variável do Airflow `OCI_NAMESPACE` (veja Passo 5).
+
 ### GCP (Google Cloud)
 
-```bash
-# Crie o diretório de configuração
-mkdir -p ~/.gcp
-
-# Copie o arquivo de service account
-cp /caminho/para/service-account-key.json ~/.gcp/service-account-key.json
-
-# Configure a variável de ambiente
-export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.gcp/service-account-key.json"
-```
+O storage GCP (`plugins/storages/gcp_storage.py`) acessa o Cloud Storage via API S3-compatible usando **chaves HMAC**, não um service account JSON. Gere um par de chaves HMAC no console do GCP e configure-as como variáveis do Airflow `GCP_ACCESS_KEY` / `GCP_SECRET_KEY` (veja Passo 5) — não é necessário `GOOGLE_APPLICATION_CREDENTIALS`.
 
 ### Huawei Cloud
 
-```bash
-# Configure as variáveis de ambiente
-export HUAWEI_ACCESS_KEY_ID="sua-access-key"
-export HUAWEI_SECRET_ACCESS_KEY="sua-secret-key"
-export HUAWEI_REGION="sa-brazil-1"
-```
+As credenciais do Huawei OBS (`plugins/storages/hpc_storage.py`) são lidas das variáveis do Airflow `HPC_ACCESS_KEY`, `HPC_SECRET_KEY` e `HPC_SERVER` (veja Passo 5) — não de variáveis de ambiente.
 
 ## Passo 5: Configurar Variáveis do Airflow
 
@@ -187,64 +177,49 @@ airflow variables import airflow_variables.json
 # AWS - Credenciais e Configuração
 airflow variables set AWS_ACCESS_KEY_ID "AKIAIOSFODNN7EXAMPLE"
 airflow variables set AWS_SECRET_ACCESS_KEY "sua-secret-key"
-airflow variables set AWS_REGION "us-east-1"
 airflow variables set AWS_BUCKET "seu-bucket-aws"
 airflow variables set AWS_PREFIX "reports/focus/"
 
-# OCI - Configuração do Bucket
-# Nota: OCI usa ~/.oci/config para credenciais
+# OCI - Namespace e Configuração do Bucket
+# Nota: credenciais via arquivo ./config/oci.conf (veja seção de credenciais acima)
+airflow variables set OCI_NAMESPACE "seu-namespace-oci"
 airflow variables set OCI_BUCKET "seu-bucket-oci"
 airflow variables set OCI_PREFIX "reports/focus/"
 
-# GCP - Configuração do Bucket
-# Nota: GCP usa service account JSON (GOOGLE_APPLICATION_CREDENTIALS)
+# GCP - Credenciais (chaves HMAC) e Configuração do Bucket
+airflow variables set GCP_ACCESS_KEY "sua-gcp-hmac-access-key"
+airflow variables set GCP_SECRET_KEY "sua-gcp-hmac-secret-key"
 airflow variables set GCP_BUCKET "seu-bucket-gcp"
 airflow variables set GCP_PREFIX "reports/focus/"
-airflow variables set GCP_PROJECT_ID "seu-projeto-gcp"
 
-# Huawei Cloud - Credenciais e Configuração
-airflow variables set HUAWEI_ACCESS_KEY_ID "sua-huawei-access-key"
-airflow variables set HUAWEI_SECRET_ACCESS_KEY "sua-huawei-secret-key"
-airflow variables set HUAWEI_REGION "sa-brazil-1"
+# Huawei Cloud (OBS) - Credenciais e Configuração
+airflow variables set HPC_ACCESS_KEY "sua-huawei-access-key"
+airflow variables set HPC_SECRET_KEY "sua-huawei-secret-key"
+airflow variables set HPC_SERVER "https://obs.sa-brazil-1.myhuaweicloud.com"
 airflow variables set HPC_BUCKET "seu-bucket-huawei"
 airflow variables set HPC_FOCUS_PREFIX "reports/focus/"
 
-# Backup Storage (S3-Compatible)
-# Suporta: Dell ECS, MinIO, AWS S3, Wasabi, Backblaze B2, etc
-airflow variables set BACKUP_STORAGE_TYPE "ecs"
-airflow variables set BACKUP_ACCESS_KEY_ID "sua-backup-access-key"
-airflow variables set BACKUP_SECRET_ACCESS_KEY "sua-backup-secret-key"
-airflow variables set BACKUP_ENDPOINT_URL "https://seu-ecs.exemplo.com"
-airflow variables set BACKUP_BUCKET "focus-reports-backup"
-airflow variables set BACKUP_AWS_PREFIX "raw/aws/"
-airflow variables set BACKUP_OCI_PREFIX "raw/oci/"
-airflow variables set BACKUP_GCP_PREFIX "raw/gcp/"
-airflow variables set BACKUP_HUAWEI_PREFIX "raw/huawei/"
-airflow variables set BACKUP_REGION "us-east-1"
-```
-
-**Nota sobre Backup Storage:**
-- **Dell ECS**: Configure `BACKUP_ENDPOINT_URL` com o endereço do ECS
-- **MinIO**: Configure `BACKUP_ENDPOINT_URL` com o endereço do MinIO
-- **AWS S3**: Não precisa de `BACKUP_ENDPOINT_URL`, apenas credenciais
-- **Outros S3-compatible**: Configure o endpoint específico do provedor
+# Backup Storage (S3-Compatible) - Dell ECS, MinIO, etc
+airflow variables set ECS_ACCESS_KEY "sua-ecs-access-key"
+airflow variables set ECS_SECRET_KEY "sua-ecs-secret-key"
+airflow variables set ECS_ENDPOINT_URL "https://seu-ecs.exemplo.com"
+airflow variables set ECS_BUCKET "focus-reports-backup"
+airflow variables set ECS_AWS_PREFIX "raw/aws/"
+airflow variables set ECS_OCI_PREFIX "raw/oci/"
+airflow variables set ECS_GCP_PREFIX "raw/gcp/"
+airflow variables set ECS_HPC_FOCUS_PREFIX "raw/huawei/"
 
 # PostgreSQL Database - Configuração de Conexão
 airflow variables set FINOPS_DB_HOST "localhost"
-airflow variables set FINOPS_DB_PORT "5432"
 airflow variables set FINOPS_DB "finops"
 airflow variables set FINOPS_USER "airflow_user"
 airflow variables set FINOPS_PASSWORD "sua-senha-segura"
-
-# PostgreSQL Database - Nomes das Tabelas FOCUS
-airflow variables set TABLE_AWS_FOCUS "tb_aws_focus"
-airflow variables set TABLE_OCI_FOCUS "tb_oci_focus"
-airflow variables set TABLE_GCP_FOCUS "tb_gcp_focus"
-airflow variables set TABLE_HUAWEI_FOCUS "tb_hpc_focus"
-airflow variables set TABLE_PROCESSED_FILES "tb_processed_files"
 ```
 
-> **⚠️ Importante**: Nenhuma configuração está hard-coded no código. Todos os parâmetros são configuráveis via variáveis do Airflow.
+**Nota sobre Backup Storage:**
+- `ECS_ENDPOINT_URL` é sempre lido pelo código e deve ser definido (para Dell ECS, MinIO ou qualquer S3-compatible, use o endpoint correspondente; para AWS S3 use `https://s3.amazonaws.com` ou a URL regional).
+
+> **⚠️ Importante**: A porta do PostgreSQL (`5432`) e os nomes das tabelas FOCUS (`tb_aws_focus`, `tb_oci_focus`, `tb_gcp_focus`, `tb_hpc_focus`, `tb_processed_files`) são fixos no código, não configuráveis via variável do Airflow.
 
 ## Passo 6: Iniciar o Airflow
 
@@ -324,7 +299,7 @@ curl http://localhost:8080/health
 airflow dags list | grep focus
 
 # 3. Verificar variáveis configuradas
-airflow variables list | grep -E "AWS_|OCI_|GCP_|HPC_|HUAWEI_|BACKUP_"
+airflow variables list | grep -E "AWS_|OCI_|GCP_|HPC_|ECS_|FINOPS_"
 
 # 4. Verificar conexão com PostgreSQL
 airflow connections get postgres_default
@@ -360,14 +335,12 @@ echo 'export PYTHONPATH=$PYTHONPATH:$AIRFLOW_HOME/plugins' >> ~/.bashrc
 ### Erro de credenciais
 
 ```bash
-# Verifique se as variáveis de ambiente estão definidas
-env | grep -E "AWS_|GOOGLE_|HUAWEI_"
+# Todas as credenciais de storage (AWS, OCI, GCP, Huawei, ECS) são lidas via
+# variáveis do Airflow, não variáveis de ambiente. Verifique se estão definidas:
+airflow variables list | grep -E "AWS_|OCI_|GCP_|HPC_|ECS_"
 
-# Teste a conexão com AWS
-aws s3 ls
-
-# Teste a conexão com GCP
-gcloud auth application-default print-access-token
+# Exceção: o client OCI também depende do arquivo ./config/oci.conf existir
+# e ser legível pelo processo do worker
 ```
 
 ## Próximos Passos
